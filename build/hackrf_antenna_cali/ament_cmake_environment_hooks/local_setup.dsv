@@ -1,0 +1,2 @@
+source;share/hackrf_antenna_cali/environment/ament_prefix_path.sh
+source;share/hackrf_antenna_cali/environment/path.sh

@@ -1,0 +1,4 @@
+source;share/hackrf_antenna_cali/local_setup.bash
+source;share/hackrf_antenna_cali/local_setup.dsv
+source;share/hackrf_antenna_cali/local_setup.sh
+source;share/hackrf_antenna_cali/local_setup.zsh
