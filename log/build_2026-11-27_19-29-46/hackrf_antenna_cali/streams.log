@@ -1,0 +1,23 @@
+[0.034s] Invoking command in '/home/elin/ros2_ws-dev/build/hackrf_antenna_cali': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy /usr/bin/cmake --build /home/elin/ros2_ws-dev/build/hackrf_antenna_cali -- -j8 -l8
+[0.159s] Invoked command in '/home/elin/ros2_ws-dev/build/hackrf_antenna_cali' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy /usr/bin/cmake --build /home/elin/ros2_ws-dev/build/hackrf_antenna_cali -- -j8 -l8
+[0.172s] Invoking command in '/home/elin/ros2_ws-dev/build/hackrf_antenna_cali': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy /usr/bin/cmake --install /home/elin/ros2_ws-dev/build/hackrf_antenna_cali
+[0.184s] -- Install configuration: ""
+[0.185s] -- Execute custom install script
+[0.185s] -- Up-to-date symlink: /home/elin/ros2_ws-dev/install/hackrf_antenna_cali/lib/hackrf_antenna_cali/main.py
+[0.187s] -- Up-to-date symlink: /home/elin/ros2_ws-dev/install/hackrf_antenna_cali/share/hackrf_antenna_cali/launch/calibration.py
+[0.188s] -- Up-to-date symlink: /home/elin/ros2_ws-dev/install/hackrf_antenna_cali/share/ament_index/resource_index/package_run_dependencies/hackrf_antenna_cali
+[0.190s] -- Up-to-date symlink: /home/elin/ros2_ws-dev/install/hackrf_antenna_cali/share/ament_index/resource_index/parent_prefix_path/hackrf_antenna_cali
+[0.199s] -- Up-to-date symlink: /home/elin/ros2_ws-dev/install/hackrf_antenna_cali/share/hackrf_antenna_cali/environment/ament_prefix_path.sh
+[0.200s] -- Up-to-date symlink: /home/elin/ros2_ws-dev/install/hackrf_antenna_cali/share/hackrf_antenna_cali/environment/ament_prefix_path.dsv
+[0.200s] -- Up-to-date symlink: /home/elin/ros2_ws-dev/install/hackrf_antenna_cali/share/hackrf_antenna_cali/environment/path.sh
+[0.201s] -- Up-to-date symlink: /home/elin/ros2_ws-dev/install/hackrf_antenna_cali/share/hackrf_antenna_cali/environment/path.dsv
+[0.218s] -- Up-to-date symlink: /home/elin/ros2_ws-dev/install/hackrf_antenna_cali/share/hackrf_antenna_cali/local_setup.bash
+[0.218s] -- Up-to-date symlink: /home/elin/ros2_ws-dev/install/hackrf_antenna_cali/share/hackrf_antenna_cali/local_setup.sh
+[0.219s] -- Up-to-date symlink: /home/elin/ros2_ws-dev/install/hackrf_antenna_cali/share/hackrf_antenna_cali/local_setup.zsh
+[0.222s] -- Up-to-date symlink: /home/elin/ros2_ws-dev/install/hackrf_antenna_cali/share/hackrf_antenna_cali/local_setup.dsv
+[0.222s] -- Symlinking: /home/elin/ros2_ws-dev/install/hackrf_antenna_cali/share/hackrf_antenna_cali/package.dsv
+[0.285s] -- Up-to-date symlink: /home/elin/ros2_ws-dev/install/hackrf_antenna_cali/share/ament_index/resource_index/packages/hackrf_antenna_cali
+[0.285s] -- Up-to-date symlink: /home/elin/ros2_ws-dev/install/hackrf_antenna_cali/share/hackrf_antenna_cali/cmake/hackrf_antenna_caliConfig.cmake
+[0.291s] -- Up-to-date symlink: /home/elin/ros2_ws-dev/install/hackrf_antenna_cali/share/hackrf_antenna_cali/cmake/hackrf_antenna_caliConfig-version.cmake
+[0.295s] -- Up-to-date symlink: /home/elin/ros2_ws-dev/install/hackrf_antenna_cali/share/hackrf_antenna_cali/package.xml
+[0.299s] Invoked command in '/home/elin/ros2_ws-dev/build/hackrf_antenna_cali' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy /usr/bin/cmake --install /home/elin/ros2_ws-dev/build/hackrf_antenna_cali

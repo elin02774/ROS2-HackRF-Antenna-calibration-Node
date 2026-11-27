@@ -59,7 +59,10 @@ def read_rssi(hackrf: HackRF, rssi_threshold) -> SimpleNamespace:
     if not raw_data:
         raise RuntimeError('HackRF returned no IQ samples')
 
-    iq_f32 = np.frombuffer(raw_data, dtype=np.int8).astype(np.float32) * (1.0 / 128.0)
+    iq_f32 = (
+        np.frombuffer(raw_data, dtype=np.int8).astype(np.float32)
+        * (1.0 / 128.0)
+    )
     iq = iq_f32.view(np.complex64)
     iq4 = iq.reshape(-1, 4)
     iq4[:, 1] *= -1j
@@ -120,7 +123,9 @@ class AntennaCalibrationNode(rclpy.node.Node):
         self.declare_parameter('out_file', 'lookup.json')
         self.declare_parameter('frequency', 2480.00e6)
         self.declare_parameter('target_link', 'odom')
+        self.declare_parameter('base_link', 'base_link')
         self.declare_parameter('antenna_link', 'antenna_link_1')
+        self.declare_parameter('beacon_distance', 2.0)
         self.declare_parameter('cmd', '/cmd_vel')
         self.declare_parameter('rssi_threshold', -26.5)
         self.declare_parameter('step', 10.0)
@@ -131,39 +136,81 @@ class AntennaCalibrationNode(rclpy.node.Node):
         self.cmd_pub = self.create_publisher(Twist, cmd, 10)
         self.records = []
 
-    def get_link_orientation(self):
-        target_link = (
-            self.get_parameter('target_link').get_parameter_value().string_value
+    @staticmethod
+    def quat_to_yaw(q) -> float:
+        return math.atan2(
+            2.0 * (q.w * q.z + q.x * q.y),
+            1.0 - 2.0 * (q.y * q.y + q.z * q.z),
         )
-        antenna_link = (
-            self.get_parameter('antenna_link').get_parameter_value().string_value
-        )
+
+    def get_transform(self, target_frame: str, source_frame: str):
         try:
             trans = self.tf_buffer.lookup_transform(
-                target_link,
-                antenna_link,
+                target_frame,
+                source_frame,
                 rclpy.time.Time(),
             )
-            return trans.transform.rotation
+            return trans.transform
         except TransformException:
             return None
+
+    @staticmethod
+    def compensate_offset(avg_rssi, ant_tf, beacon_xy, ref_distance):
+        if ant_tf is None:
+            return avg_rssi, None, None, None
+
+        ax = ant_tf.translation.x
+        ay = ant_tf.translation.y
+        yaw = AntennaCalibrationNode.quat_to_yaw(ant_tf.rotation)
+
+        dx = beacon_xy[0] - ax
+        dy = beacon_xy[1] - ay
+        d_true = max(math.hypot(dx, dy), 1e-6)
+
+        fspl_corr_db = 20.0 * math.log10(d_true / ref_distance)
+        corrected_rssi = (
+            None if avg_rssi is None else float(avg_rssi + fspl_corr_db)
+        )
+
+        bearing_odom = math.atan2(dy, dx)
+        rel_angle_rad = math.atan2(
+            math.sin(bearing_odom - yaw),
+            math.cos(bearing_odom - yaw),
+        )
+        rel_angle_deg = math.degrees(rel_angle_rad)
+
+        return (
+            corrected_rssi,
+            float(rel_angle_deg),
+            float(d_true),
+            float(fspl_corr_db),
+        )
 
     def save_measurement(
         self,
         out_file,
-        orientation,
+        ant_tf,
         avg_rssi,
+        corrected_rssi,
+        rel_angle_deg,
+        distance_m,
+        fspl_corr_db,
         vld,
         step,
         gain_lna,
         gain_vga,
     ):
+        orientation = None if ant_tf is None else ant_tf.rotation
         self.records.append({
             'orientation_w': None if orientation is None else float(orientation.w),
             'orientation_x': None if orientation is None else float(orientation.x),
             'orientation_y': None if orientation is None else float(orientation.y),
             'orientation_z': None if orientation is None else float(orientation.z),
             'avg_rssi': avg_rssi,
+            'corrected_rssi': corrected_rssi,
+            'rel_angle_deg': rel_angle_deg,
+            'distance_m': distance_m,
+            'fspl_corr_db': fspl_corr_db,
             'vld': vld,
             'step': float(step),
             'gain_lna': gain_lna,
@@ -198,6 +245,22 @@ class AntennaCalibrationNode(rclpy.node.Node):
         frequency = (
             self.get_parameter('frequency').get_parameter_value().double_value
         )
+        target_link = (
+            self.get_parameter('target_link').get_parameter_value().string_value
+        )
+        base_link = (
+            self.get_parameter('base_link').get_parameter_value().string_value
+        )
+        antenna_link = (
+            self.get_parameter('antenna_link')
+            .get_parameter_value()
+            .string_value
+        )
+        beacon_distance = (
+            self.get_parameter('beacon_distance')
+            .get_parameter_value()
+            .double_value
+        )
         rssi_threshold = (
             self.get_parameter('rssi_threshold')
             .get_parameter_value()
@@ -211,17 +274,44 @@ class AntennaCalibrationNode(rclpy.node.Node):
             abs_tol=1e-6,
         ):
             raise ValueError('step must divide 360 degrees evenly')
+        if beacon_distance <= 0:
+            raise ValueError('beacon_distance must be greater than zero')
+
+        start_tf = self.get_transform(target_link, base_link)
+        if start_tf is None:
+            raise RuntimeError(f'No TF between {target_link} and {base_link}')
+
+        start_yaw = self.quat_to_yaw(start_tf.rotation)
+        beacon_xy = (
+            start_tf.translation.x + beacon_distance * math.cos(start_yaw),
+            start_tf.translation.y + beacon_distance * math.sin(start_yaw),
+        )
 
         sample_count = int(round(360.0 / step))
         hackrf = open_hackrf(frequency, LNA_GAIN, VGA_GAIN)
         try:
             for i in range(sample_count):
                 rssi = read_rssi(hackrf, rssi_threshold)
-                orientation = self.get_link_orientation()
+                ant_tf = self.get_transform(target_link, antenna_link)
+                (
+                    corrected_rssi,
+                    rel_angle_deg,
+                    distance_m,
+                    fspl_corr_db,
+                ) = self.compensate_offset(
+                    rssi.avg,
+                    ant_tf,
+                    beacon_xy,
+                    beacon_distance,
+                )
                 self.save_measurement(
                     out_file,
-                    orientation,
+                    ant_tf,
                     rssi.avg,
+                    corrected_rssi,
+                    rel_angle_deg,
+                    distance_m,
+                    fspl_corr_db,
                     rssi.vld,
                     i * step,
                     LNA_GAIN,
